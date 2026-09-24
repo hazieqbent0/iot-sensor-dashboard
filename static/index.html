@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>IoT Sensor Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: sans-serif; background: #111; color: #eee; text-align: center; }
+    canvas { max-width: 800px; margin: 40px auto; }
+  </style>
+</head>
+<body>
+  <h1>Live Sensor Dashboard</h1>
+  <canvas id="chart"></canvas>
+
+  <script>
+    const ctx = document.getElementById('chart').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [
+          { label: 'Temperature (°C)', data: [], borderColor: 'red', fill: false },
+          { label: 'Humidity (%)', data: [], borderColor: 'blue', fill: false }
+        ]
+      },
+      options: { animation: false, scales: { y: { beginAtZero: false } } }
+    });
+
+    async function fetchData() {
+      const res = await fetch('/api/sensor-data');
+      const data = await res.json();
+      const time = new Date(data.timestamp * 1000).toLocaleTimeString();
+
+      chart.data.labels.push(time);
+      chart.data.datasets[0].data.push(data.temperature);
+      chart.data.datasets[1].data.push(data.humidity);
+
+      if (chart.data.labels.length > 20) {
+        chart.data.labels.shift();
+        chart.data.datasets.forEach(ds => ds.data.shift());
+      }
+      chart.update();
+    }
+
+    setInterval(fetchData, 2000);
+    fetchData();
+  </script>
+</body>
+</html>
